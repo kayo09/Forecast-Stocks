@@ -1,3 +1,5 @@
+#generated using automated tools
+
 from flask import Flask, render_template, request
 import yfinance as yf
 import pandas as pd
