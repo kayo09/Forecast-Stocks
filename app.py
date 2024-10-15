@@ -1,12 +1,11 @@
-import os
-from flask import Flask, send_from_directory, jsonify
+from flask import Flask, render_template, request
 import yfinance as yf
 import pandas as pd
+from prophet import Prophet
+import plotly.graph_objs as go
 from datetime import datetime, timedelta
-import numpy as np
-from sklearn.linear_model import LinearRegression
 
-app = Flask(__name__, static_folder='.')
+app = Flask(__name__)
 
 def fetch_stock_data(ticker, start_date, end_date):
     stock = yf.Ticker(ticker)
@@ -15,55 +14,46 @@ def fetch_stock_data(ticker, start_date, end_date):
     stock_data['Date'] = pd.to_datetime(stock_data['Date']).dt.tz_localize(None)
     return stock_data[['Date', 'Close']]
 
-def simple_forecast(data, forecast_days):
-    X = np.arange(len(data)).reshape(-1, 1)
-    y = data['Close'].values
-    model = LinearRegression()
-    model.fit(X, y)
-    
-    future_X = np.arange(len(data), len(data) + forecast_days).reshape(-1, 1)
-    future_prices = model.predict(future_X)
-    
-    future_dates = pd.date_range(start=data['Date'].iloc[-1] + timedelta(days=1), periods=forecast_days)
-    forecast = pd.DataFrame({'Date': future_dates, 'Close': future_prices})
+def prepare_data_for_prophet(data):
+    return data.rename(columns={'Date': 'ds', 'Close': 'y'})
+
+def train_prophet_model(data):
+    model = Prophet(daily_seasonality=True)
+    model.fit(data)
+    return model
+
+def make_future_predictions(model, periods):
+    future_dates = model.make_future_dataframe(periods=periods)
+    forecast = model.predict(future_dates)
     return forecast
 
-@app.route('/')
+def create_plot(actual_data, forecast):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=actual_data['Date'], y=actual_data['Close'], name='Actual Price'))
+    fig.add_trace(go.Scatter(x=forecast['ds'], y=forecast['yhat'], name='Forecasted Price'))
+    fig.update_layout(title='Stock Price Prediction', xaxis_title='Date', yaxis_title='Price')
+    return fig.to_html(full_html=False)
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return send_from_directory('.', 'index.html')
+    if request.method == 'POST':
+        ticker = request.form['ticker']
+        start_date = '2020-01-01'
+        end_date = datetime.now().strftime('%Y-%m-%d')
+        forecast_days = 30
 
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('.', path)
+        try:
+            stock_data = fetch_stock_data(ticker, start_date, end_date)
+            prophet_data = prepare_data_for_prophet(stock_data)
+            model = train_prophet_model(prophet_data)
+            forecast = make_future_predictions(model, forecast_days)
+            plot = create_plot(stock_data, forecast)
+            return render_template('result.html', plot=plot)
+        except Exception as e:
+            error_message = f"An error occurred: {str(e)}"
+            return render_template('index.html', error=error_message)
 
-@app.route('/api/dashboard_data/<ticker>')
-def dashboard_data(ticker):
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=365)  # 1 year of historical data
-    forecast_days = 30
-    
-    # Fetch stock data
-    stock_data = fetch_stock_data(ticker, start_date, end_date)
-    
-    # Simple forecast
-    forecast = simple_forecast(stock_data, forecast_days)
-    
-    # Prepare data for frontend
-    historical_data = stock_data['Close'].tolist()
-    historical_dates = stock_data['Date'].dt.strftime('%Y-%m-%d').tolist()
-    forecast_data = forecast['Close'].tolist()
-    forecast_dates = forecast['Date'].dt.strftime('%Y-%m-%d').tolist()
-    
-    return jsonify({
-        'historical_data': historical_data,
-        'historical_dates': historical_dates,
-        'forecast_data': forecast_data,
-        'forecast_dates': forecast_dates,
-        'latest_price': stock_data['Close'].iloc[-1],
-        'price_change': stock_data['Close'].iloc[-1] - stock_data['Close'].iloc[-2],
-        'forecast_price': forecast['Close'].iloc[-1],
-    })
+    return render_template('index.html')
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+if __name__ == '__main__':
+    app.run(debug=True)
