@@ -3,14 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ ticker }} Dashboard</title>
+    <title>{{ ticker }} Stock Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
-<body>
-    <h1>{{ ticker }} Trading Dashboard</h1>
-    <div>
-        {{ dashboard|safe }}
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">{{ ticker }} Stock Dashboard</h1>
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold mb-2">Latest Price</h2>
+                    <p id="latest-price" class="text-2xl font-bold text-indigo-600">Loading...</p>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold mb-2">Price Change</h2>
+                    <p id="price-change" class="text-2xl font-bold">Loading...</p>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold mb-2">Forecast Price</h2>
+                    <p id="forecast-price" class="text-2xl font-bold text-green-600">Loading...</p>
+                </div>
+            </div>
+        </div>
+        <div id="dashboard" class="bg-white rounded-lg shadow-md p-6"></div>
     </div>
-    <a href="/">Back to Home</a>
+
+    <script>
+        function formatPrice(price) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
+        }
+
+        fetch('/api/dashboard_data/{{ ticker }}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('latest-price').textContent = formatPrice(data.latest_price);
+                
+                const priceChange = data.price_change;
+                const priceChangeElement = document.getElementById('price-change');
+                priceChangeElement.textContent = formatPrice(Math.abs(priceChange));
+                priceChangeElement.classList.add(priceChange >= 0 ? 'text-green-600' : 'text-red-600');
+                priceChangeElement.textContent += priceChange >= 0 ? ' ▲' : ' ▼';
+
+                document.getElementById('forecast-price').textContent = formatPrice(data.forecast_price);
+
+                Plotly.newPlot('dashboard', JSON.parse(data.dashboard));
+            });
+    </script>
 </body>
 </html>
-
