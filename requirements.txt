@@ -1,0 +1,7 @@
+Flask
+yfinance
+prophet
+statsmodels
+plotly
+gunicorn
+
