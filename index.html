@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r126/three.min.js" integrity="sha512-n8IpKWzDnBOcBhRlHirMZOUvEq2bLRMuJGjuVqbzUJwtTsgwOgK5aS0c1JA647XWYfqvXve8k3PtZdzpipFjgg==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/three@0.126.0/examples/js/loaders/GLTFLoader.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <title>Kay Parmar</title>
+    <style>
+        body {
+            margin: 0;  
+            font-family: "Press Start 2P", system-ui;
+            font-weight: 200;
+            font-style: normal;
+        }
+        .content {
+            position: absolute;
+            top: 70%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #F0EDCF;
+        }
+        a {
+            color: #F0EDCF;
+            text-decoration: none;
+            transition: color 0.3s ease-in-out;
+        }
+        a:hover {
+            color: #FFD700;
+        }
+        #stockDashboard {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #F0EDCF;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+        }
+        #dashboardContent {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <p><a href="resume.pdf" target="_blank">resume</a></p>
+        <p><a href="https://github.com/kayo09" target="_blank">github</a></p>
+    </div>
+    
+    <div id="stockDashboard">
+        <h2 class="text-2xl mb-4">Stock Dashboard</h2>
+        <form id="stockForm" class="space-y-4">
+            <div>
+                <label for="ticker" class="block text-sm">Enter Stock Ticker:</label>
+                <input type="text" id="ticker" name="ticker" required
+                    class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white">
+            </div>
+            <div>
+                <button type="submit"
+                    class="w-full py-2 px-4 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700">
+                    Generate Dashboard
+                </button>
+            </div>
+        </form>
+        <div id="dashboardContent" class="hidden">
+            <div class="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                    <h3 class="text-sm mb-1">Latest Price</h3>
+                    <p id="latest-price" class="text-lg font-bold text-green-400">Loading...</p>
+                </div>
+                <div>
+                    <h3 class="text-sm mb-1">Price Change</h3>
+                    <p id="price-change" class="text-lg font-bold">Loading...</p>
+                </div>
+                <div>
+                    <h3 class="text-sm mb-1">Forecast Price</h3>
+                    <p id="forecast-price" class="text-lg font-bold text-blue-400">Loading...</p>
+                </div>
+            </div>
+            <div id="dashboard"></div>
+        </div>
+    </div>
+</body>
+<script type="module" src="script.js"></script>
+</html>
