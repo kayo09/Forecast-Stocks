@@ -118,8 +118,8 @@
             const priceDiff = (forecastPrice - currentPrice).toFixed(2);
             const trendPercentage = ((priceDiff / currentPrice) * 100).toFixed(2);
             
-            document.getElementById('currentPrice').textContent = `$${currentPrice}`;
-            document.getElementById('forecast').textContent = `$${forecastPrice}`;
+            document.getElementById('currentPrice').textContent = `${currentPrice}`;
+            document.getElementById('forecast').textContent = `${forecastPrice}`;
             
             const trendElement = document.getElementById('trend');
             if (priceDiff > 0) {
