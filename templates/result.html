@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Analysis Result</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-    <h1>Stock Analysis Result</h1>
-    {{ plot | safe }}
+    <h1>Stock Analysis Result for {{ ticker }}</h1>
+    <div id="plot"></div>
+    <script>
+        var graphData = {{ plot | safe }};
+        Plotly.newPlot('plot', graphData.data, graphData.layout);
+    </script>
     <br>
     <a href="/">Back to Home</a>
 </body>
