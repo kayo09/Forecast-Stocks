@@ -3,18 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Analysis</title>
+    <title>StockInsight Pro</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .loader {
+            border-top-color: #667eea;
+            -webkit-animation: spinner 1.5s linear infinite;
+            animation: spinner 1.5s linear infinite;
+        }
+        @-webkit-keyframes spinner {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
-<body>
-    <h1>Stock Analysis*</h1>
-    <form method="POST" action="/">
-        <label for="ticker">Enter Ticker Symbol:</label>
-        <input type="text" id="ticker" name="ticker" required>
-        <button type="submit">Analyze</button>
-    </form>
-    {% if error %}
-    <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    <h3>*Made only for academic and research purposes</h3>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-5xl font-bold mb-8 text-center text-white">StockInsight Pro</h1>
+        <div class="glass-effect p-8 mb-8">
+            <form id="stockForm" class="mb-8">
+                <div class="flex items-center justify-center">
+                    <input type="text" id="ticker" name="ticker" required
+                           class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-300 placeholder-white placeholder-opacity-70 flex-grow"
+                           placeholder="Enter Ticker Symbol (e.g., AAPL, GOOGL)">
+                    <button type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 px-6 py-2 rounded-r-lg transition duration-300 font-semibold">
+                        Analyze
+                    </button>
+                </div>
+            </form>
+            <div id="error" class="text-red-300 text-center mb-4 hidden"></div>
+            <div id="loader" class="loader mx-auto w-16 h-16 border-4 border-blue-300 border-solid rounded-full hidden"></div>
+        </div>
+        
+        <div id="resultContainer" class="glass-effect p-8 hidden">
+            <h2 id="stockTitle" class="text-3xl font-bold mb-4 text-center"></h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="p-4 bg-white bg-opacity-10 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2">Current Price</h3>
+                    <p id="currentPrice" class="text-2xl font-bold"></p>
+                </div>
+                <div class="p-4 bg-white bg-opacity-10 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2">30-Day Forecast</h3>
+                    <p id="forecast" class="text-2xl font-bold"></p>
+                </div>
+                <div class="p-4 bg-white bg-opacity-10 rounded-lg">
+                    <h3 class="text-xl font-semibold mb-2">Trend</h3>
+                    <p id="trend" class="text-2xl font-bold"></p>
+                </div>
+            </div>
+            <div id="plotContainer">
+                <div id="plot" class="w-full h-[500px]"></div>
+            </div>
+        </div>
+        
+        <p class="text-center mt-8 text-sm text-white text-opacity-70">*For academic and research purposes only. Not financial advice.</p>
+    </div>
+    
+    <script>
+        document.getElementById('stockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const ticker = document.getElementById('ticker').value.toUpperCase();
+            document.getElementById('error').classList.add('hidden');
+            document.getElementById('loader').classList.remove('hidden');
+            document.getElementById('resultContainer').classList.add('hidden');
+            
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `ticker=${encodeURIComponent(ticker)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loader').classList.add('hidden');
+                if (data.success) {
+                    updateUI(data, ticker);
+                } else {
+                    showError(data.error);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loader').classList.add('hidden');
+                showError('An error occurred. Please try again.');
+            });
+        });
+
+        function updateUI(data, ticker) {
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('stockTitle').textContent = `${ticker} Stock Analysis`;
+            
+            const currentPrice = data.plot.data[0].y[data.plot.data[0].y.length - 1].toFixed(2);
+            const forecastPrice = data.plot.data[1].y[data.plot.data[1].y.length - 1].toFixed(2);
+            const priceDiff = (forecastPrice - currentPrice).toFixed(2);
+            const trendPercentage = ((priceDiff / currentPrice) * 100).toFixed(2);
+            
+            document.getElementById('currentPrice').textContent = `$${currentPrice}`;
+            document.getElementById('forecast').textContent = `$${forecastPrice}`;
+            
+            const trendElement = document.getElementById('trend');
+            if (priceDiff > 0) {
+                trendElement.textContent = `↗ +${trendPercentage}%`;
+                trendElement.classList.add('text-green-400');
+            } else {
+                trendElement.textContent = `↘ ${trendPercentage}%`;
+                trendElement.classList.add('text-red-400');
+            }
+            
+            Plotly.newPlot('plot', data.plot.data, {
+                ...data.plot.layout,
+                paper_bgcolor: 'rgba(0,0,0,0)',
+                plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#fff' },
+                xaxis: { ...data.plot.layout.xaxis, gridcolor: '#ffffff20' },
+                yaxis: { ...data.plot.layout.yaxis, gridcolor: '#ffffff20' }
+            });
+        }
+
+        function showError(message) {
+            const errorElement = document.getElementById('error');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+    </script>
 </body>
 </html>
