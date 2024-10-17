@@ -46,7 +46,7 @@ def index():
             stock_data = fetch_stock_data(ticker, start_date, end_date)
             forecast_data = train_model_and_forecast(stock_data, forecast_days)
             plot = create_plot(stock_data, forecast_data)
-            return render_template('results.html', plot=plot, ticker=ticker)
+            return render_template('result.html', plot=plot, ticker=ticker)
         except Exception as e:
             error_message = f"An error occurred: {str(e)}"
             return render_template('index.html', error=error_message)
