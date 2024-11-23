@@ -10,7 +10,10 @@
     <h1>Stock Analysis Result for {{ ticker }}</h1>
     <div id="plot"></div>
     <script>
-        var graphData = {{ plot | safe }};
+        // Parse the JSON data from the backend
+        var graphData = JSON.parse('{{ plot | tojson | safe }}');
+
+        // Use Plotly to create the plot
         Plotly.newPlot('plot', graphData.data, graphData.layout);
     </script>
     <br>

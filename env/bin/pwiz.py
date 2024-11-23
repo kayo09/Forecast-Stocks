@@ -1,4 +1,4 @@
-#!/Users/kayparmar/Desktop/code/Projects/website/new/website/Forecast-Stocks/env/bin/python3
+#!/Users/kayparmar/Desktop/code/Projects/www/projects/Forecast-Stocks/env/bin/python3.13
 
 import datetime
 import os
